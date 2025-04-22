@@ -1,13 +1,12 @@
 import os
 from openai import OpenAI
-from dotenv import load_dotenv
 
 class LLMHandler:
     def __init__(self, api_key: str = os.environ.get("OPENAI_API_KEY")):
         self.client = OpenAI(api_key=api_key)
 
         self.context = """
-        Please respond with a comma separated list of the kitchen objects in this list that best match the user query. If there are no ingredients that match, response with "None".
+        Please respond with a comma separated list of the kitchen objects in this list that best match the user query.
         The list of kitchen objects is:
         1. Pepper
         2. Salt
