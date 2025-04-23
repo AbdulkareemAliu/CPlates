@@ -3,7 +3,8 @@ from datetime import datetime, timezone
 from time import sleep
 from dataclasses import dataclass, asdict
 import pandas as pd
-
+import numpy as np
+from scipy.optimize import minimize 
 
 
 @dataclass
@@ -27,11 +28,10 @@ class Reader:
 
 class ThingMagic(Reader):
     def __init__(self):
-        self.reader = mercury.Reader("tmr://COM5")
+        self.reader = mercury.Reader("tmr:///dev/ttyACM1")
         self.reader.set_region("NA")
         self.reader.set_read_plan([1], "GEN2", read_power=3000)
-        self.save_dir = '/c/Users/eante/Downloads/cplates_data/reader_data'
-
+        self.save_dir = '/home/eant/splitRF/data/reader_data'
 
     def sync_reading(self):
         tag_list = self.reader.read()
@@ -72,12 +72,52 @@ class ThingMagic(Reader):
             pass
         return tag_data
 
+    def distance(self, rssi):
+        d = 10**((-70-(rssi))/(10*2.5))
+        return d
+    
+    
+    def localize_reader(self):
+
+        # anchor1 = "abc"
+        # anchor2 = "def"
+        # anchor3 = "ghi"
+
+        anchor1_rssi = -30
+        anchor2_rssi = -20
+        anchor3_rssi = -110
+
+        anchor_positions = np.array([
+            [0.0, 0.0, 0.0], # Anchor 1
+            [2.0, 0.0, 0.0], # Anchor 2
+            [1.0, 2.0, 1.0]  # Anchor 3
+        ])
+
+        distances = np.array([
+            self.distance(anchor1_rssi),
+            self.distance(anchor2_rssi),
+            self.distance(anchor3_rssi)
+        ])
+
+        def objective(reader_pos):
+            return np.sum((np.linalg.norm(reader_pos - anchor_positions, axis=1) - distances)**2)
+
+        initial_guess  = np.mean(anchor_positions, axis=0)
+        result = minimize(objective, initial_guess, method='L-BFGS-B')
+
+        if result.success:
+            estimated_position = result.x
+            print(f"Estimated reader position: {estimated_position}")
+        else:
+            print("Optimization failed:", result.message)
+
 
 if __name__ == "__main__":
     reader = ThingMagic()
-    tag_data = reader.async_reading(False)
-    tag_df = pd.DataFrame(asdict(tag_data))
-    now_strtime = datetime.now().strftime('%Y%m%d%H%M%S')
-    print(tag_df)
-    tag_df.to_csv(f'{reader.save_dir}/rfdata_{now_strtime}.csv')
+    reader.localize_reader()
+    # tag_data = reader.async_reading(False)
+    # tag_df = pd.DataFrame(asdict(tag_data))
+    # now_strtime = datetime.now().strftime('%Y%m%d%H%M%S')
+    # print(tag_df)
+    # tag_df.to_csv(f'{reader.save_dir}/rfdata_{now_strtime}.csv')
     # print(reader.sync_reading())
