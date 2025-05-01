@@ -2,7 +2,6 @@ import os
 from llm_handler import LLMHandler
 from speech_handler import SpeechHandler
 
-
 if __name__ == "__main__":
 
     speech_handler = SpeechHandler("ml/vosk-model-small-en-us-0.15", "p")

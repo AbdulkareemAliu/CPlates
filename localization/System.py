@@ -3,10 +3,10 @@ import pandas as pd
 # from Reader import Reader, ThingMagic, ZebraRFD40, ReadingData
 # from Camera import Camera, Optitrack, OAKD
 from dataclasses import dataclass, asdict
-from Interpolate import reindex_interp
+# from Interpolate import reindex_interp
 from multiprocessing import Process, Queue, Manager, Event
 import signal
-from emmanuel_process import IBLocalizationProcessorDiscovery
+# from emmanuel_process import IBLocalizationProcessorDiscovery
 import ib_loc
 import sys
 import glob
@@ -96,20 +96,20 @@ class System:
         cm_df.index, tag_df.index = pd.to_datetime(cm_df.index), pd.to_datetime(tag_df.index)                        # Interpolates location data to fit tag timestamps
         print(cm_df)                                                                                                 # using isaac's reindex_interp function
         print(tag_df)
-        interpolated_df = reindex_interp(cm_df, tag_df_index, ts_offset=None)
+        # interpolated_df = reindex_interp(cm_df, tag_df_index, ts_offset=None)
         # interpolated_df.to_csv('testfile.csv')
         interpolated_df = pd.concat([interpolated_df, tag_df], axis=1, join='outer').dropna(axis=0)
         interpolated_df.to_csv('Interpolated.csv')
         return interpolated_df
 
-    def run_demo(self):
-        """
-        Localizes rf tags and returns results. Uses location/rf data that is pulled in get_interpolate_df() function.
-        """
-        self.get_interpolate_df()
-        print('reached processing')
-        processor = IBLocalizationProcessorDiscovery()
-        return processor.run_algorithm(area_map=ib_loc.region_map, sku_map=ib_loc.sku_map)
+    # def run_demo(self):
+    #     """
+    #     Localizes rf tags and returns results. Uses location/rf data that is pulled in get_interpolate_df() function.
+    #     """
+    #     self.get_interpolate_df()
+    #     print('reached processing')
+    #     processor = IBLocalizationProcessorDiscovery()
+    #     return processor.run_algorithm(area_map=ib_loc.region_map, sku_map=ib_loc.sku_map)
 
     def run_local_save_tag(self, sync, csv_filename, append=False, replace_bool=False):
         """
