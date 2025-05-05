@@ -30,7 +30,7 @@ class Reader:
 
 class ThingMagic(Reader):
     def __init__(self):
-        self.reader = mercury.Reader("tmr:///dev/ttyACM1")
+        self.reader = mercury.Reader("tmr:///dev/cu.usbserial-AQ00WAJ1")
         self.reader.set_region("NA")
         self.reader.set_read_plan([1], "GEN2", read_power=3000)
         self.save_dir = '/home/eant/splitRF/data/reader_data'
