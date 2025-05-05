@@ -9,12 +9,12 @@ from time import sleep
 
 class RssiLocalizationBase:
     def __init__(self):
-        self.zone_count = 2
         self.zones = {
                         "E135204700000000000000CA": 0,
                         "E23456780000000000000023": 1,
                         "E23456780000000000000031": 2
                       }
+        self.zone_count = len(self.zones)
         
         #Maps each zone to the possible distances to every other zone
         #e.g. for zone 0, distances found of 0 to 5 could correspond to zone 1
@@ -34,6 +34,12 @@ class RssiLocalizationBase:
             0: [0, 0],
             1: [6.5, 4],
             2: [12, 0.4],
+        }
+
+        self.zone_fingerprints = {
+            0: np.array([-50, -60, -70]),
+            1: np.array([-60, -50, -90]),
+            2: np.array([-70, -90, -50])
         }
         
         self.reader = mercury.Reader("tmr:///dev/cu.usbserial-AQ00WAJ1")
@@ -66,11 +72,11 @@ class RssiLocalizationBase:
         
         max_rssi_tag = max(self.zones, key=lambda z: max(tag_rssi[z]))
         zone = self.zones[max_rssi_tag]
-        return zone
+        return zone, tag_rssi
     
     def distance(self, rssi):
-         d = 10**((-72-(rssi))/(10*2.5))
-         return d * 3.28084  # Convert to feet
+         d = 10**((-60-(rssi))/(10*2.5))
+         return d
     
     def aggregate_readings(self, readings):
         """
@@ -85,12 +91,58 @@ class RssiLocalizationBase:
         else:
             return sorted_readings[mid]
 
-    def localize_object(self, object_epc, min_num_readings):
+    def localize_object_fingerprint(self, object_epc):
+        cur_zone, tag_rssi = self.localize_reader(10)
+        object_readings = {}
+
+        candidates = list(range(self.zone_count))
+        threshold = 5
+
+        #ideally this is done until we have enough zone readings to be certain of object location
+        # while some list of candidates has more than 1 element, 
+        # where a candidate is a fingerprint that can be max distance d from current readings
+        # this may just not terminate so static upper bound used
+        while len(object_readings) < min(3, len(self.zone_count)) or len(candidates) > 1:
+            print(f"localizing reader...")
+            cur_zone, tag_rssi = self.localize_reader(10)
+            print(f"Reader zone: {cur_zone}")
+
+            #Finding distance to object from current zone
+            readings = []
+            def read_update(tag):
+                epc, rssi = tag.epc.decode("utf-8"), tag.rssi
+                
+                if epc == object_epc:
+                    readings.append(rssi)
+
+            self.reader.start_reading(lambda tag: read_update(tag))
+            while len(readings) < 10:
+                sleep(1)
+            self.reader.stop_reading()
+            print(f"Zone: {cur_zone} found with the following readings: {readings}")
+            object_readings[cur_zone] = self.aggregate_readings(readings)
+            current_fingerprint = np.array([object_readings[zone] for zone in object_readings])
+
+            new_candidates = []
+            for old_candidate in candidates:
+                old_candidate_fingerprint = self.zone_fingerprints[old_candidate][list(object_readings.keys())] #ensure that the order is the same
+                if (abs(old_candidate_fingerprint - current_fingerprint) < threshold):
+                    new_candidates.append(old_candidate)
+            candidates = new_candidates
+        
+        if len(candidates) == 1:
+            return candidates[0]
+
+        fingerprints = {zone: self.zone_fingerprints[zone][list(object_readings.keys())] for zone in object_readings}
+        cur_fingerprint = np.array([object_readings[zone] for zone in object_readings])
+        return min(fingerprints, key=lambda zone: np.linalg.norm(cur_fingerprint - fingerprints[zone]))
+
+    def localize_object_trilaterate(self, object_epc, min_num_readings):
         zone_to_readings = {}
 
         while (len(zone_to_readings) < 3):
             print(f"localizing reader...")
-            cur_zone = self.localize_reader(5)
+            cur_zone, _ = self.localize_reader(5)
             
             if cur_zone in zone_to_readings:
                 continue
