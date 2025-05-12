@@ -73,6 +73,6 @@ class SpeechHandler:
         return transcribed_text
         
 if __name__ == "__main__":
-    handler = SpeechHandler("./ml/vosk-model-small-en-us-0.15", "p")
+    handler = SpeechHandler("./models/vosk-model-small-en-us-0.15", "p")
     transcription = handler.record()
     print(transcription)

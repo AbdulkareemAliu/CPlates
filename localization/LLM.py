@@ -6,26 +6,28 @@ class LLMHandler:
         self.client = OpenAI(api_key=api_key)
 
         self.context = """
-        Please respond with a comma separated list of the kitchen objects in this list that best match the user query.
+        Please respond with the id value of kitchen object in this list that best match the user query. Please do not return anything else! If there is a match please give a response in the format "object, id". Otherwise, return "None".
         The list of kitchen objects is:
-        1. Pepper
-        2. Salt
-        3. Paprika
-        4. Garlic
-        5. Onion
-        6. Tomato
-        7. Cucumber
-        8. Lettuce
-        9. Carrot
-        10. Potato
-        11. Spatula
-        12. Whisk
-        13. Heavy Cream
-        14. Olive Oil
-        15. Butter
-        16. Sugar
-        17. Flour
-        18. Baking Powder
+        
+        name | id
+        Cheese | E23456780000000000000031 
+        Salt | E23456780000000000000031
+        Paprika | E23456780000000000000031
+        Garlic | E23456780000000000000031
+        Onion | E23456780000000000000031
+        Tomato | E23456780000000000000031
+        Cucumber | E23456780000000000000031
+        Lettuce | E23456780000000000000031
+        Carrot | E23456780000000000000031
+        Potato | E23456780000000000000031
+        Spatula | E23456780000000000000031
+        Whisk | E23456780000000000000031
+        Heavy Cream | E23456780000000000000031
+        Olive Oil | E23456780000000000000031
+        Butter | E23456780000000000000031
+        Sugar | E23456780000000000000031
+        Flour | E23456780000000000000031
+        Baking Powder | E23456780000000000000031
 """
 
     def query_llm(self, query: str, model: str = "gpt-3.5-turbo"):
